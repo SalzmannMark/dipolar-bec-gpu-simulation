@@ -8,7 +8,7 @@ the Gross-Pitaevskii equation using C++ and CUDA.
 The methods and results implemented in this repository are described in my
 Bachelor thesis:
 
-[**Bachelor Thesis — PDF**](thesis/bachelor-thesis.pdf)
+[**Bachelor Thesis — PDF**](thesis/Bachelorarbeit_Mark_Salzmann.pdf)
 
 ## Overview
 
