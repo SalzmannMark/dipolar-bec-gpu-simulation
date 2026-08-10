@@ -24,8 +24,8 @@ the Gross-Pitaevskii equation using C++ and CUDA.
 - Linux/HPC
 
 ## Results
+![Density distribution](Results/combined_plot.png)
 
-[plots/images]
 
 ## Performance
 
