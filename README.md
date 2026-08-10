@@ -29,6 +29,8 @@ condensate.
 
 The condensate is described by the Gross-Pitaevskii equation
 
+$ \alpha + \beta = \gamma$
+
 $$
 i\hbar\frac{\partial\Psi(\mathbf r,t)}{\partial t}
 =
