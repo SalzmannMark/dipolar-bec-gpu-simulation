@@ -29,28 +29,11 @@ condensate.
 
 The condensate is described by the Gross-Pitaevskii equation
 
-$ \alpha + \beta = \gamma$
-
-$$
-i\hbar\frac{\partial\Psi(\mathbf r,t)}{\partial t}
-=
-\left[
--\frac{\hbar^2\nabla^2}{2m}
-+V(\mathbf r)
-+g|\Psi(\mathbf r,t)|^2
-+\Phi_{\mathrm{dd}}(\mathbf r,t)
-\right]\Psi(\mathbf r,t),
-$$
+$$ i\hbar\frac{\partial\Psi(\mathbf r,t)}{\partial t} =\left[-\frac{\hbar^2\nabla^2}{2m} +V(\mathbf r) +g|\Psi(\mathbf r,t)|^2 +\Phi_{\mathrm{dd}}(\mathbf r,t)\right]\Psi(\mathbf r,t), $$
 
 where the non-local dipolar mean-field potential is given by
 
-$$
-\Phi_{\mathrm{dd}}(\mathbf r)
-=
-\int d^3r'\,
-V_{\mathrm{dd}}(\mathbf r-\mathbf r')
-|\Psi(\mathbf r')|^2.
-$$
+$$ \Phi_{\mathrm{dd}}(\mathbf r) = \int d^3r'\, V_{\mathrm{dd}}(\mathbf r-\mathbf r') |\Psi(\mathbf r')|^2. $$
 
 The simulations consider three-dimensional dipolar condensates and allow
 different external trapping potentials and interaction parameters to be
