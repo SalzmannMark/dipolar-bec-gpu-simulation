@@ -3,6 +3,13 @@
 Numerical simulation of dipolar Bose-Einstein condensates by solving
 the Gross-Pitaevskii equation using C++ and CUDA.
 
+## Bachelor Thesis
+
+The methods and results implemented in this repository are described in my
+Bachelor thesis:
+
+[**Bachelor Thesis — PDF**](thesis/bachelor-thesis.pdf)
+
 ## Overview
 
 [2–3 paragraphs explaining the physics problem]
