@@ -91,7 +91,7 @@ Among the investigated effects are:
 Example simulation results:
 
 <p align="center">
-  <img src="images/results/example_result.png" width="700">
+  <img src="Results/x2_omega250_N500k_ohne.png" width="700">
 </p>
 
 *Example ground-state density obtained from the numerical simulations.*
