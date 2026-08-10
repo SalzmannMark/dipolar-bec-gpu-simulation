@@ -1,0 +1,95 @@
+# Parameter file for running gradient descent step simulations
+
+# Mesh parameters
+xmax = 22.0 # Size of the mesh along the x-axis, in micrometers. The mesh will extend from -xmax to xmax
+ymax = 22.0 # Size of the mesh along the y-axis, in micrometers. The mesh will extend from -ymax to ymax
+zmax = 11.0 # Size of the mesh along the z-axis, in micrometers. The mesh will extend from -zmax to zmax
+nx = 512 # Number of points along the x-axis
+ny = 512 # Number of points along the y-axis
+nz = 256 # Number of points along the z-axis
+
+
+# Physical parameters
+# Scattering length in units of the Bohr radius ## out of use
+dipolar_length      = 132.00 # Dipolar length in units of the Bohr radius
+number of particles = 0  # Total number of atoms
+atomic mass         = 164    # Atomic mass, in atomic mass units
+
+initial scattering length = 0 #
+final scattering length = 0 #
+
+edd = 0
+edd_final = 0
+
+#########################################################################################
+# initial run parameters for gradient descent
+
+
+number of gradient descent steps initial = 10000 #
+residual                         = 1.E-6 # Threshold on the norm of the residual
+alpha                            = 1.E-3 # gradient descent step
+beta                             = 0.9   # step for the heavy-ball acceleration method
+
+# Run parameters for real-time dynamics
+
+number of real time steps = 1 # Total number of time-steps for real time dynamics
+time step                 = 1 # Time step for real-time dynamics, in milliseconds
+write output every        = 1  # Write output every tot iterations
+
+#########################################################################################
+# EXTERNAL POTENTIAL INITIAL PARAMETERS
+
+# Angles specifying the orientation of the dipoles, in radiants
+theta = 0.0
+phi   = 0.0
+
+# Harmonic Potential 
+omegax = 0 # Harmonic frequency along the x-axis, in units of (2pi)Hz
+omegay = 0 # Harmonic frequency along the y-axis, in units of (2pi)Hz
+omegaz = 100 # Harmonic frequency along the z-axis, in units of (2pi)Hz
+
+radius = 0 #
+
+height = 1000 # Set the value for the height of the potential well, between 1000 and 2350 recommended for about 256 pixels
+
+
+# Additional potential well
+type = none # "none", "cylinder_hard_wall", "x2", ... , "x10"
+
+shape = 1 # Insert "0" for none, 1 for cylindrical
+
+offset = 0
+
+#########################################################################################
+# EXTERNAL POTENTIAL FINAL PARAMETERS
+theta_final = 0.0
+phi_final   = 0.0
+
+
+# Harmonic Potential 
+omegax_final = 0 # Harmonic frequency along the x-axis, in units of (2pi)Hz
+omegay_final = 0 # Harmonic frequency along the y-axis, in units of (2pi)Hz
+omegaz_final = 0 # Harmonic frequency along the z-axis, in units of (2pi)Hz
+
+radius_final = 0 #
+
+height_final = 0 # Set the value for the height of the potential well, between 1000 and 2350 recommended for about 256 pixels
+
+# Additional potential well
+
+type_final = none # "none", "cylinder_hard_wall", "x2", ... , "x10"
+shape_final = 0 # Insert "0" for none, 1 for cylindrical
+
+offset_final = 0
+
+#########################################################################################
+
+use_cutoff = 0 # To use the cutoff, set use_cutoff = 1, else 0
+
+# The position space cutoff is important to be set below the maximal x,y,z values
+# For spherical cutoff, set all cut values equal
+cut_x = 0 # Size of cutoff
+cut_y = 0 # Size of cutoff
+cut_z = 0 # Size of cutoff
+
+#########################################################################################
