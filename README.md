@@ -41,6 +41,10 @@ The implemented cutoff addresses this by restricting the dipolar interaction to 
 
 The effect of this numerical treatment is investigated systematically across different atom numbers, trapping potentials, and interaction strengths.
 
+<p align="center">
+  <img src="Results/plots/cuda_cutoff.png" width="800">
+</p>
+
 ## Computational Implementation
 
 The project is implemented primarily in **C++ and CUDA** and builds on the [UltraCold](https://github.com/smroccuzzo/UltraCold) scientific simulation framework.
