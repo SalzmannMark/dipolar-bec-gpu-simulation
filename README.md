@@ -67,37 +67,27 @@ The simulations demonstrate that periodic-image interactions can produce signifi
 
 For a cylindrical box trap with radius
 
-[
-R = 10.185,\mu\mathrm{m}
-]
+$R = 10.185,\mu\mathrm{m}$
 
 and (N=10^5) atoms, the critical relative dipolar interaction strength was found to be approximately
 
-[
-1.41 < \epsilon_{dd} < 1.425
-]
+$1.41 < \epsilon_{dd} < 1.425$
 
 without the interaction cutoff, compared with
 
-[
-1.404 < \epsilon_{dd} < 1.41
-]
+$1.404 < \epsilon_{dd} < 1.41$
 
 when the cutoff was applied.
 
 The cutoff result is closer to the previously reported value of approximately
 
-[
-\epsilon_{dd}=1.40.
-]
+$\epsilon_{dd}=1.40.$
 
 ### Periodic-image effects at high atom numbers
 
 Increasing the particle number to
 
-[
-N=5\times10^5
-]
+$N=5\times10^5$
 
 causes the condensate to extend closer to the boundaries of the simulation domain, making interactions with periodic replicas more pronounced.
 
@@ -125,15 +115,11 @@ At sufficiently large interaction strength, the droplet densities become increas
 
 The simulations were performed on three-dimensional grids with physical dimensions of approximately
 
-[
-44\times44\times22,\mu\mathrm{m}^3
-]
+$44\times44\times22,\mu\mathrm{m}^3$
 
 and particle numbers ranging from approximately
 
-[
-10^5 \quad\text{to}\quad 5\times10^5.
-]
+$10^5 \quad\text{to}\quad 5\times10^5.$
 
 GPU acceleration was essential for performing the large parameter studies required to investigate convergence, phase transitions, and cutoff effects.
 
