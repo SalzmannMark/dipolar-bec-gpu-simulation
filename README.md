@@ -14,7 +14,7 @@ The methods, numerical analysis, and physical results implemented in this reposi
 
 Dipolar Bose-Einstein condensates are quantum many-body systems in which long-range, anisotropic dipole-dipole interactions compete with short-range contact interactions. By varying the relative interaction strength, the condensate can undergo transitions from a superfluid state to structured droplet and supersolid phases.
 
-This project investigates these phase transitions by numerically solving the three-dimensional Gross-Pitaevskii equation for a dipolar condensate of (^{164}\mathrm{Dy}) atoms. Ground-state configurations are obtained through energy minimization on a three-dimensional spatial grid, with simulations involving approximately (10^5) to (5\times10^5) atoms.
+This project investigates these phase transitions by numerically solving the three-dimensional Gross-Pitaevskii equation for a dipolar condensate of $(^{164}\mathrm{Dy})$ atoms. Ground-state configurations are obtained through energy minimization on a three-dimensional spatial grid, with simulations involving approximately $(10^5)$ to $(5\times10^5)$ atoms.
 
 A particular focus of the project is the effect of **periodic boundary conditions on long-range dipolar interactions**. Fourier-space evaluation of the dipolar interaction using Fast Fourier Transforms introduces periodic replicas of the simulated system. Because the dipolar interaction is long-ranged, these replicas can interact with the physical condensate and produce unphysical numerical effects. An interaction cutoff is therefore implemented to suppress these periodic-image interactions.
 
@@ -107,7 +107,7 @@ These effects demonstrate that periodic-image interactions can influence not onl
 
 ### Harmonic trapping potential
 
-For (N=5\times10^5) atoms in a harmonic trap, increasing (\epsilon_{dd}) produces a regime in which the trap volume becomes populated by droplets.
+For $(N=5\times10^5)$ atoms in a harmonic trap, increasing $(\epsilon_{dd})$ produces a regime in which the trap volume becomes populated by droplets.
 
 At sufficiently large interaction strength, the droplet densities become increasingly homogeneous throughout the condensate. The simulations also reveal rotational-symmetry-breaking configurations when periodic-image interactions are not suppressed.
 
