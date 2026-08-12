@@ -42,7 +42,7 @@ The implemented cutoff addresses this by restricting the dipolar interaction to 
 The effect of this numerical treatment is investigated systematically across different atom numbers, trapping potentials, and interaction strengths.
 
 <p align="center">
-  <img src="Results/plots/cuda_cutoff.png" width="400">
+  <img src="Results/plots/cuda_cutoff.png" width="600">
 </p>
 
 ## Computational Implementation
@@ -89,7 +89,7 @@ $\epsilon_{dd}=1.40.$
 
 
 <p align="center">
-  <img src="Results/plots/rocuzzo_superfluid_fraction.png" width="400">
+  <img src="Results/plots/rocuzzo_superfluid_fraction.png" width="600">
 </p>
 
 ### Periodic-image effects at high atom numbers
@@ -101,6 +101,38 @@ $N=5\times10^5$
 causes the condensate to extend closer to the boundaries of the simulation domain, making interactions with periodic replicas more pronounced.
 
 Without the cutoff, these interactions can modify the topology of the ground-state density and lead to configurations that are absent when the cutoff is applied.
+
+### Effect of the interaction cutoff
+
+The interaction cutoff suppresses unphysical interactions between the
+condensate and its periodic replicas. The difference becomes particularly
+pronounced for large particle numbers, where the condensate extends closer
+to the boundaries of the simulation domain.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="Results/simulations/x6_mit_N500k.png" width="600">
+      <br>
+      <em>With interaction cutoff</em>
+    </td>
+    <tr>
+    <tr>
+    <td align="center">
+      <img src="Results/simulations/x6_ohne_N500k.png" width="600">
+      <br>
+      <em>Without interaction cutoff</em>
+    </td>
+  </tr>
+</table>
+
+*Table 1.** Critical values of the relative dipolar interaction strength
+with and without the interaction cutoff.
+
+| Configuration | Critical range of $\epsilon_{dd}$ |
+|---|---:|
+| Without cutoff | $1.41 < \epsilon_{dd} < 1.425$ |
+| With cutoff | $1.404 < \epsilon_{dd} < 1.41$ |
 
 ### Spurious symmetry breaking
 
