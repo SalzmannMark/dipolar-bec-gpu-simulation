@@ -42,7 +42,7 @@ The implemented cutoff addresses this by restricting the dipolar interaction to 
 The effect of this numerical treatment is investigated systematically across different atom numbers, trapping potentials, and interaction strengths.
 
 <p align="center">
-  <img src="Results/plots/cuda_cutoff.png" width="800">
+  <img src="Results/plots/cuda_cutoff.png" width="400">
 </p>
 
 ## Computational Implementation
@@ -86,6 +86,11 @@ when the cutoff was applied.
 The cutoff result is closer to the previously reported value of approximately
 
 $\epsilon_{dd}=1.40.$
+
+
+<p align="center">
+  <img src="Results/plots/rocuzzo_superfluid_fraction.png" width="400">
+</p>
 
 ### Periodic-image effects at high atom numbers
 
