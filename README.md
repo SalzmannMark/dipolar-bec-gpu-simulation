@@ -162,17 +162,22 @@ GPU acceleration was essential for performing the large parameter studies requir
 
 The repository contains both the C++/CUDA simulation code and Python/Jupyter tools used for post-processing, data collection, and visualization.
 
+
 ## Dependencies
 
-The main dependencies are:
+This project is built on top of [UltraCold](https://github.com/smroccuzzo/UltraCold),
+a modular C++ library for studying ultracold atomic systems within
+Gross-Pitaevskii theory. UltraCold provides CPU and CUDA-accelerated
+solvers and numerical infrastructure used by this project.
 
-* C++
-* CUDA
-* CUDA FFT (`cuFFT`)
-* CMake
-* Python
-* Jupyter / NumPy / SciPy / Matplotlib
-* [UltraCold](https://github.com/)
+- **UltraCold** — C++ Gross-Pitaevskii simulation library
+- **CUDA** — GPU acceleration
+- **cuFFT** — Fourier transforms
+- **CMake** — build system
+- **Python / NumPy / SciPy / Matplotlib** — data analysis and visualization
+
+See the [UltraCold documentation](https://smroccuzzo.github.io/UltraCold/html/index.html)
+for installation instructions and API documentation.
 
 The simulations were developed and tested in a Linux/HPC environment with NVIDIA GPUs.
 
