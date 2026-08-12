@@ -43,7 +43,7 @@ The effect of this numerical treatment is investigated systematically across dif
 
 ## Computational Implementation
 
-The project is implemented primarily in **C++ and CUDA** and builds on the [UltraCold](https://github.com/) scientific simulation framework.
+The project is implemented primarily in **C++ and CUDA** and builds on the [UltraCold](https://github.com/smroccuzzo/UltraCold) scientific simulation framework.
 
 The custom simulation layer extends the underlying framework with:
 
