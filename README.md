@@ -1,456 +1,180 @@
-# GPU-Accelerated Simulation of Dipolar Bose-Einstein Condensates
+# GPU-Accelerated Simulation of Dipolar Bose–Einstein Condensates
 
-Numerical investigation of phase transitions and finite-size effects in dipolar Bose-Einstein condensates using GPU-accelerated solutions of the three-dimensional Gross-Pitaevskii equation.
+**Bachelor's thesis research project** | C++ · CUDA · FFT-based numerical methods · Python · HPC
 
-The project was developed as part of my Bachelor's thesis in Physics at Heidelberg University. It extends the **UltraCold** C++/CUDA simulation framework with custom solvers, trapping potentials, physical models, and simulation workflows for large-scale dipolar BEC calculations.
+Numerical study of finite-domain artifacts in three-dimensional dipolar Bose–Einstein condensates (BECs). This project extends the [UltraCold](https://github.com/smroccuzzo/UltraCold) C++/CUDA framework with a GPU-accelerated workflow for computing ground states of the extended Gross–Pitaevskii equation (eGPE), analysing phase transitions, and suppressing unphysical periodic-image interactions through a dipolar-interaction cutoff.
 
-## Bachelor Thesis
+It was developed for my 2025 B.Sc. Physics thesis at Heidelberg University, supervised at the Kirchhoff Institute for Physics by Prof. Dr. Thomas Gasenzer.
 
-The methods, numerical analysis, and physical results implemented in this repository are documented in the accompanying Bachelor's thesis:
+> **Research question:** How strongly do FFT-imposed periodic boundary conditions bias calculated ground states of long-range interacting quantum systems, and how effectively does a real-space cutoff remove that bias?
 
-[**Bachelor Thesis — PDF**](thesis/Bachelorarbeit_Mark_Salzmann.pdf)
+## Highlights
 
-## Overview
+- Implemented and evaluated a finite-range cutoff for the long-range dipole–dipole interaction in an FFT-based 3D solver.
+- Ran GPU-accelerated parameter studies for $^{164}\mathrm{Dy}$ condensates with $10^5$–$5\times10^5$ atoms on Heidelberg University's EINC cluster.
+- Computed ground states through constrained energy minimisation, and post-processed density fields with Python and Jupyter notebooks.
+- Identified numerical artifacts from periodic replicas, including shifts in the apparent transition point, altered droplet topology, and spurious rotational-symmetry breaking.
+- Compared cutoff and unmodified calculations across cylindrical, softened box-like, and harmonic traps.
 
-Dipolar Bose-Einstein condensates are quantum many-body systems in which long-range, anisotropic dipole-dipole interactions compete with short-range contact interactions. By varying the relative interaction strength, the condensate can undergo transitions from a superfluid state to structured droplet and supersolid phases.
+## Key result
 
-This project investigates these phase transitions by numerically solving the three-dimensional Gross-Pitaevskii equation for a dipolar condensate of $(^{164}\mathrm{Dy})$ atoms. Ground-state configurations are obtained through energy minimization on a three-dimensional spatial grid, with simulations involving approximately $(10^5)$ to $(5\times10^5)$ atoms.
+For a cylindrical box trap with $N=10^5$ atoms, the estimated transition interval changed from
 
-A particular focus of the project is the effect of **periodic boundary conditions on long-range dipolar interactions**. Fourier-space evaluation of the dipolar interaction using Fast Fourier Transforms introduces periodic replicas of the simulated system. Because the dipolar interaction is long-ranged, these replicas can interact with the physical condensate and produce unphysical numerical effects. An interaction cutoff is therefore implemented to suppress these periodic-image interactions.
+| Dipolar-interaction treatment | Estimated critical interval for $\varepsilon_{dd}$ |
+| --- | ---: |
+| No cutoff | $1.41 < \varepsilon_{dd} < 1.425$ |
+| Cutoff applied | $1.404 < \varepsilon_{dd} < 1.41$ |
 
-The simulations compare ground states obtained with and without the cutoff across different trapping potentials and interaction regimes. The results demonstrate that periodic-image interactions can qualitatively modify the computed ground states, including droplet configurations, edge behavior, critical interaction strengths, and rotational symmetry.
-# Numerical Methods in the Bachelor Thesis
+The cutoff result is consistent with the approximately $\varepsilon_{dd}=1.40$ value reported in the literature. At larger particle numbers, the effect becomes more pronounced because the condensate reaches closer to the numerical boundary.
 
-## 1. Energy functional and the extended Gross-Pitaevskii equation
+![Superfluid fraction versus relative dipolar interaction strength.](Results/plots/rocuzzo_superfluid_fraction.png)
 
-The starting point of the numerical treatment is the effective energy functional for a dipolar Bose gas, which contains the kinetic energy, the dipolar interaction, and the renormalized local effective potential:
+*Finite-range cutoff shifts the observed transition interval in the box-trap calculation. The density-modulated phase is signalled by the drop in superfluid fraction.*
 
-$$
-E[\psi, \psi^*] = \int d^3x \left[\frac{\hbar^2}{2m} |\nabla\psi|^2 + \int d^3y\, V_{dd}(\mathbf{x}-\mathbf{y}) |\psi(\mathbf{x})|^2 |\psi(\mathbf{y})|^2 + V_{\text{eff}}(\psi) \right],
-$$
+| Cutoff applied | No cutoff |
+| --- | --- |
+| [![Real-space density with cutoff.](Results/simulations/x6_mit_N500k.png)](Results/simulations/x6_mit_N500k.png) | [![Real-space density without cutoff.](Results/simulations/x6_ohne_N500k.png)](Results/simulations/x6_ohne_N500k.png) |
 
-with
+*Real-space densities in a softened $r^6$ trap at $N=5\times10^5$. Open either figure for the full-resolution parameter sweep.*
 
-$$
-V_{\text{eff}}(\psi) = (V_{\text{ext}} - \mu)|\psi|^2 + \frac{1}{2} g_R |\psi|^4 + \frac{16}{15\pi^2} g\sqrt{a_s^3}\, \mathcal{Q}_5(\varepsilon_{dd}) |\psi|^{5/2}.
-$$
+## Methods
 
-The ground state is obtained by minimizing the functional $E - \mu N$, where the total particle number is
+The model is the three-dimensional eGPE for a dipolar $^{164}\mathrm{Dy}$ condensate. It includes kinetic energy, external confinement, contact interactions, dipole–dipole interactions, and the Lee–Huang–Yang correction.
 
-$$
-N = \|\psi(\mathbf{r})\|^2 = \int d^3r\, |\psi(\mathbf{r})|^2.
-$$
+### Physical model
 
-Requiring stationarity with respect to the complex conjugate field gives the time-independent extended Gross-Pitaevskii equation (eGPE):
-
-$$
-\frac{\delta}{\delta \psi^*(\mathbf{x})} \left(E[\psi, \psi^*] - \mu N\right) = 0,
-$$
-
-which leads to
+The condensate is represented by a complex order parameter $\psi(\mathbf r,t)$, whose density is $n(\mathbf r,t)=|\psi(\mathbf r,t)|^2$. Its evolution is described by the eGPE
 
 $$
-\mu \psi(\mathbf{r}) = \left[-\frac{\hbar^2}{2m}\nabla^2 + V_{\text{ext}}(\mathbf{r}) + g_R |\psi(\mathbf{r})|^2 + \gamma(\varepsilon_{dd}) |\psi(\mathbf{r})|^3 + \Phi_{dd}(\mathbf{r})|\psi|^2 \right] \psi(\mathbf{r})
-\equiv \mathcal{H}\psi(\mathbf{r}).
+i\hbar \frac{\partial \psi}{\partial t} =
+\left[
+  -\frac{\hbar^2}{2m}\nabla^2
+  + V_\mathrm{ext}
+  + g|\psi|^2
+  + \Phi_\mathrm{dd}
+  + \gamma_\mathrm{QF}|\psi|^3
+\right]\psi.
 $$
 
-The LHY correction enters as
+Here, $g=4\pi\hbar^2a_s/m$ is the contact-interaction coupling, $V_\mathrm{ext}$ describes the trap, and $\gamma_\mathrm{QF}|\psi|^3$ is the local Lee–Huang–Yang (LHY) correction. The LHY term captures the leading contribution from quantum fluctuations and provides a stabilising repulsion that is essential for finite-density droplet states.
+
+The non-local dipolar mean field is a convolution,
 
 $$
-\gamma(\varepsilon_{dd}) = \frac{2}{3\pi^2} \left(\frac{m}{\hbar^2}\right)^{3/2} g_R^{5/2} \mathcal{Q}_5(\varepsilon_{dd})
-= \frac{64\sqrt{\pi}\,\hbar^2 a_s^{5/2}}{3m} \mathcal{Q}_5(\varepsilon_{dd}).
-$$
-
-The corresponding time-dependent eGPE is
-
-$$
- i\hbar \partial_t \psi(\mathbf{r}) = \left[-\frac{\hbar^2}{2m}\nabla^2 + V_{\text{ext}}(\mathbf{r}) + g_R |\psi(\mathbf{r})|^2 + \gamma(\varepsilon_{dd}) |\psi(\mathbf{r})|^3 + \Phi_{dd}(\mathbf{r})|\psi|^2 \right] \psi(\mathbf{r}).
-$$
-
----
-
-## 2. Dimensionless form of the eGPE
-
-For numerical work it is useful to rewrite the equations in dimensionless units using the harmonic oscillator length and time scale:
-
-$$
- a_{\text{ho}} = \sqrt{\frac{\hbar}{m\omega_{\text{ho}}}},
+\Phi_\mathrm{dd}(\mathbf r) =
+\int V_\mathrm{dd}(\mathbf r-\mathbf r')\,n(\mathbf r')\,d^3r',
 \qquad
-\omega_{\text{ho}} = \frac{\hbar}{m a_{\text{ho}}^2},
+V_\mathrm{dd}(\mathbf r) =
+\frac{C_\mathrm{dd}}{4\pi}
+\frac{1-3\cos^2\theta}{r^3}.
 $$
 
-where
+For magnetically polarised $^{164}\mathrm{Dy}$, $C_\mathrm{dd}=\mu_0\mu^2$ and the competition between dipolar and contact interactions is expressed by $\varepsilon_\mathrm{dd}=a_\mathrm{dd}/a_s$. Its anisotropy makes the interaction repulsive side-by-side and attractive head-to-tail; tuning $\varepsilon_\mathrm{dd}$ therefore drives the transition between smooth condensates and density-modulated droplet or supersolid configurations.
+
+### Spectral evaluation and cutoff
+
+The convolution is evaluated efficiently with the convolution theorem:
 
 $$
-\omega_{\text{ho}} = (\omega_x \omega_y \omega_z)^{1/3}.
+\Phi_\mathrm{dd} =
+\mathcal F^{-1}\!\left[
+  \widetilde V_\mathrm{dd}(\mathbf k)\,
+  \widetilde n(\mathbf k)
+\right].
 $$
 
-The dimensionless variables are
+This reduces a non-local $3$D operation to pointwise multiplication in momentum space and is the reason GPU-accelerated FFTs are central to the workflow. The trade-off is that a discrete FFT evaluates a *periodic* convolution: the condensate is implicitly tiled beyond the simulation cell. Since $V_\mathrm{dd}\propto r^{-3}$, those replicas can still contribute appreciably near the boundary.
 
-$$
-\tilde{r}_i = \frac{r_i}{a_{\text{ho}}},
-\qquad
-\tilde{t} = \omega_{\text{ho}} t,
-\qquad
-\tilde{\omega}_i = \frac{\omega_i}{\omega_{\text{ho}}},
-\qquad
-\tilde{\psi}(\tilde{\mathbf{r}}) = a_{\text{ho}}^{3/2}\psi(\mathbf{r}),
-\qquad
-\tilde{a}_s = \frac{a_s}{a_{\text{ho}}}.
-$$
+The cutoff calculations truncate the dipolar kernel to a finite interaction region contained in the numerical domain before its Fourier-space evaluation. Comparing otherwise matched cutoff and unmodified runs isolates periodic-image effects from physical changes caused by trap geometry or interaction strength.
 
-In these units the time-dependent eGPE becomes:
+| Component | Approach |
+| --- | --- |
+| Ground-state calculation | Constrained gradient descent with wavefunction renormalisation; heavy-ball acceleration available |
+| Long-range interaction | Fourier-space convolution using CUDA/cuFFT |
+| Boundary-artifact control | Finite real-space cutoff for the dipolar kernel |
+| Dynamics | Split-step Fourier / operator-splitting propagation utilities |
+| Parameter exploration | Sweeps over interaction strength, atom number, trap geometry, and cutoff configuration |
+| Analysis | Python/Jupyter post-processing for radial data, 2D/3D densities, and comparative plots |
 
-$$
- i\partial_{\tilde{t}}\tilde{\psi}(\tilde{\mathbf{r}})
-= \left[-\frac{1}{2}\tilde{\nabla}^2 + \tilde{V}_{\text{ext}}(\tilde{\mathbf{r}}) + 4\pi \tilde{a}_s |\tilde{\psi}(\tilde{\mathbf{r}})|^2 + \frac{64\sqrt{\pi} a_s^{5/2}}{3}|\tilde{\psi}(\tilde{\mathbf{r}})|^3 \mathcal{Q}_5(\varepsilon_{dd}) + \tilde{\Phi}_{dd}(\tilde{\mathbf{r}})|\tilde{\psi}|^2 \right]\tilde{\psi}(\tilde{\mathbf{r}}),
-$$
+The numerical motivation is broadly relevant to computational physics and scientific ML: spectral methods make non-local operators tractable, but their implicit boundary conditions must be validated to prevent physically incorrect results.
 
-with
+## Technical contribution
 
-$$
-\tilde{V}_{\text{ext}}(\tilde{\mathbf{r}}) = \tilde{\omega}_x^2 \tilde{x}^2 + \tilde{\omega}_y^2 \tilde{y}^2 + \tilde{\omega}_z^2 \tilde{z}^2,
-$$
+My project-specific work is concentrated in the simulation and analysis layer:
 
-and
+- `MyHeaders/gradient_descent.hpp` and `MyHeaders/gradient_descent.ipp` — parameterised ground-state solver, trap construction, cutoff handling, and parameter-database integration.
+- `MyHeaders/MyTools.hpp` — shared numerical and simulation utilities.
+- `Own_program_vault/main_gradient_descent.cpp` — experiment configuration and batch-run entry point.
+- `Own_program_vault/*.ipynb` — analysis pipelines for density data and plots.
+- `MyHeaders/Omega_database/` — calibrated trap-frequency data used by the simulations.
 
-$$
-\tilde{\Phi}_{dd}(\tilde{\mathbf{r}}) = 3\tilde{a}_{dd}\int d^3\tilde{r}'\, \frac{1 - 3\cos^2\theta}{|\tilde{\mathbf{r}} - \tilde{\mathbf{r}}'|^3}|\tilde{\psi}(\tilde{\mathbf{r}}')|^2.
-$$
+The GPU numerical infrastructure is provided by UltraCold; this repository contains the research extensions, parameter sets, analysis notebooks, selected outputs, and the full thesis.
 
-From then on, the tildes are suppressed and all variables are treated as dimensionless.
-
----
-
-## 3. Gradient descent method for the ground state
-
-The ground state is obtained by minimizing the energy functional under the constraint of fixed particle number. The stationary solutions have the form
-
-$$
-\psi(\mathbf{r}, t) = \psi_0(\mathbf{r}) e^{-i\mu t},
-$$
-
-and satisfy the time-independent eGPE:
-
-$$
-\mathcal{H}\psi_0(\mathbf{r}) = \mu\psi_0(\mathbf{r}).
-$$
-
-The algorithm starts from an initial field $\psi_0(\mathbf{r})$, typically sampled from a uniform distribution and normalized to the target particle number $N$. A sequence of states $\{\psi_n\}_{n\in\mathbb{N}}$ is generated iteratively via steepest descent:
-
-$$
-\psi_{n+1} = \psi_n + \alpha \chi_n,
-$$
-
-where $\alpha$ is the step size and the descent direction is
-
-$$
-\chi_n = -\frac{\delta E[\psi]}{\delta \psi^*(\mathbf{r})}\bigg|_{\psi = \psi_n} = -\left(\mathcal{H}[\psi_n] - \mu_n\right)\psi_n.
-$$
-
-This ensures that the energy decreases step by step:
-
-$$
-E[\psi_{n+1}] < E[\psi_n] < \cdots < E[\psi_0].
-$$
-
-The iteration is stopped when the residual becomes sufficiently small:
-
-$$
-\frac{\|\mathcal{H}[\psi_n]\psi_n - \mu_n\psi_n\|}{\|\psi\|} \le \epsilon,
-$$
-
-with
-
-$$
-\mu_n = \frac{\langle \psi_n | \mathcal{H}[\psi_n] | \psi_n \rangle}{\|\psi_n\|^2}.
-$$
-
-After every step, the wave function is renormalized to keep the particle number fixed:
-
-$$
-\psi_{n+1} \rightarrow \sqrt{\frac{N}{\|\psi_{n+1}(\mathbf{r})\|^2}}\,\psi_{n+1}.
-$$
-
-A common acceleration is the heavy-ball method, where the update reads
-
-$$
-\psi_{n+1} = \psi_n + \alpha\chi_n + \beta(\psi_n - \psi_{n-1}).
-$$
-
-This method accelerates convergence in regions of high curvature and reduces overshooting in flatter regions.
-
----
-
-## 4. Operator-splitting spectral method for dynamic simulations
-
-To simulate the time evolution after a quench, the time-dependent eGPE is solved numerically using the split-step Fourier method, also called the operator-splitting spectral method. The Hamiltonian is divided into a kinetic part and a potential part:
-
-$$
-\mathcal{H} = \underbrace{-\frac{1}{2}\nabla^2}_{\mathcal{H}_{\text{kin}}} + \underbrace{V_{\text{ext}}(\mathbf{r}) + g|\psi(\mathbf{r}, t)|^2 + \gamma(\varepsilon_{dd})|\psi(\mathbf{r}, t)|^3 + \Phi_{dd}(\mathbf{r}, t)|\psi(\mathbf{r}, t)|^2}_{\mathcal{H}'}.
-$$
-
-The evolution over a small time step $\Delta t$ is approximated by:
-
-$$
-\psi(\mathbf{r}, t + \Delta t) = e^{-i\mathcal{H}\Delta t}\psi(\mathbf{r}, t)
-\approx e^{-i\mathcal{H}_{\text{kin}}\Delta t} e^{-i\mathcal{H}'\Delta t}\psi(\mathbf{r}, t),
-$$
-
-using the Baker-Campbell-Hausdorff approximation and neglecting terms of order $\mathcal{O}(\Delta t^3)$.
-
-The algorithm proceeds as follows:
-
-1. Propagate in real space under $\mathcal{H}'$:
-
-   $$
-   i\frac{d}{dt}\psi(\mathbf{r}, t) = \mathcal{H}'\psi(\mathbf{r}, t)
-   \Rightarrow
-   \psi(\mathbf{r}, t + \Delta t) = e^{-i\mathcal{H}'\Delta t}\psi(\mathbf{r}, t).
-   $$
-
-2. Fourier transform to momentum space, where the kinetic term is diagonal:
-
-   $$
-   i\frac{d}{dt}\tilde{\psi}(\mathbf{k}, t) = \frac{k^2}{2}\tilde{\psi}(\mathbf{k}, t)
-   \Rightarrow
-   \tilde{\psi}(\mathbf{k}, t + \Delta t) = e^{-i\frac{k^2}{2}\Delta t}\tilde{\psi}(\mathbf{k}, t).
-   $$
-
-3. Apply the inverse Fourier transform to return to real space:
-
-   $$
-   \psi(\mathbf{r}, t_{n+1}) = \mathcal{F}^{-1}[\tilde{\psi}(\mathbf{k}, t_n + \Delta t)].
-   $$
-
-This method is efficient because the kinetic term becomes diagonal in momentum space, while the local interaction terms remain simple in real space. It is unitary and approximately preserves the norm of the wave function.
-
----
-
-## 5. Box cutoff for dipolar simulations
-
-When simulating oblate traps with strong axial confinement, the condensate can be much more extended in the radial direction than in the axial one. In such cases, a full cubic grid is inefficient because it wastes many grid points in empty space. To reduce the numerical cost, a box cutoff is introduced.
-
-The idea is to restrict the interaction of each atom to a box whose size is smaller than the full simulation domain. In practice, the dipolar interaction is truncated so that the unphysical periodic copies are removed. The resulting Fourier transform of the truncated dipolar potential is computed numerically in the simulation.
-
-This is important because in a periodic box, the long-range dipolar interaction would otherwise interact with its own images, which introduces artificial effects. The cutoff effectively limits the interaction volume to a region around the condensate and therefore better represents the physical system.
-
----
-
-## Summary
-
-The numerical methods used in the thesis are based on the extended Gross-Pitaevskii equation, which includes contact interactions, dipolar interactions, and the Lee-Huang-Yang correction. The ground state is computed using a gradient-descent minimization scheme, while time evolution is simulated with a split-step Fourier method. For strongly anisotropic traps, a box cutoff is used to remove artificial interactions with periodic copies and improve the efficiency and physical accuracy of the simulations.
-
-
-### Interaction cutoff
-
-The dipolar interaction is long-ranged, while FFT-based calculations impose periodic boundary conditions. The resulting periodic replicas can therefore introduce spurious interactions.
-
-The implemented cutoff addresses this by restricting the dipolar interaction to a finite spatial range while ensuring that the simulation domain is sufficiently large to prevent interactions with periodic replicas.
-
-The effect of this numerical treatment is investigated systematically across different atom numbers, trapping potentials, and interaction strengths.
-
-<p align="center">
-  <img src="Results/plots/cuda_cutoff.png" width="600">
-</p>
-
-## Computational Implementation
-
-The project is implemented primarily in **C++ and CUDA** and builds on the [UltraCold](https://github.com/smroccuzzo/UltraCold) scientific simulation framework.
-
-The custom simulation layer extends the underlying framework with:
-
-* Gradient-descent ground-state solvers
-* Custom trapping potentials
-* Dipolar interaction models and cutoff treatment
-* Simulation parameter handling
-* Automated simulation workflows
-* CUDA-accelerated computational routines
-* Numerical analysis and convergence checks
-
-The underlying UltraCold codebase contains more than 20,000 lines of scientific C++/CUDA code. The project involved analyzing and extending this existing framework to support the requirements of the research problem.
-
-Large-scale simulations were performed on Heidelberg University's **EINC GPU cluster**, using CMake and Bash for compilation, job execution, and workflow automation.
-
-## Results
-
-The simulations demonstrate that periodic-image interactions can produce significant numerical artifacts in dipolar BEC simulations.
-
-### Shift of the critical interaction strength
-
-For a cylindrical box trap with radius
-
-$R = 10.185,\mu\mathrm{m}$
-
-and (N=10^5) atoms, the critical relative dipolar interaction strength was found to be approximately
-
-$1.41 < \epsilon_{dd} < 1.425$
-
-without the interaction cutoff, compared with
-
-$1.404 < \epsilon_{dd} < 1.41$
-
-when the cutoff was applied.
-
-The cutoff result is closer to the previously reported value of approximately
-
-$\epsilon_{dd}=1.40.$
-
-
-<p align="center">
-  <img src="Results/plots/rocuzzo_superfluid_fraction.png" width="600">
-</p>
-
-### Periodic-image effects at high atom numbers
-
-Increasing the particle number to
-
-$N=5\times10^5$
-
-causes the condensate to extend closer to the boundaries of the simulation domain, making interactions with periodic replicas more pronounced.
-
-Without the cutoff, these interactions can modify the topology of the ground-state density and lead to configurations that are absent when the cutoff is applied.
-
-### Effect of the interaction cutoff
-
-The interaction cutoff suppresses unphysical interactions between the
-condensate and its periodic replicas. The difference becomes particularly
-pronounced for large particle numbers, where the condensate extends closer
-to the boundaries of the simulation domain.
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="Results/simulations/x6_mit_N500k.png" width="600">
-      <br>
-      <em>With interaction cutoff</em>
-    </td>
-    <tr>
-    <tr>
-    <td align="center">
-      <img src="Results/simulations/x6_ohne_N500k.png" width="600">
-      <br>
-      <em>Without interaction cutoff</em>
-    </td>
-  </tr>
-</table>
-
-*Table 1.** Critical values of the relative dipolar interaction strength
-with and without the interaction cutoff.
-
-| Configuration | Critical range of $\epsilon_{dd}$ |
-|---|---:|
-| Without cutoff | $1.41 < \epsilon_{dd} < 1.425$ |
-| With cutoff | $1.404 < \epsilon_{dd} < 1.41$ |
-
-### Spurious symmetry breaking
-
-For softened cylindrical trapping potentials, simulations without the cutoff can exhibit explicit breaking of the rotational symmetry of the trap.
-
-For example, in the droplet regime, the number and arrangement of droplets can differ between simulations with and without the cutoff. These effects are numerical artifacts rather than consequences of the underlying rotationally symmetric trapping potential.
-
-### Edge effects and droplet formation
-
-The cutoff also affects the behavior of droplets near the boundary of the condensate. In some regimes, the formation of the droplet ring is delayed without the cutoff, and the resulting edge fraction differs from the cutoff calculation.
-
-These effects demonstrate that periodic-image interactions can influence not only the phase transition itself but also the detailed structure of the resulting ground state.
-
-### Harmonic trapping potential
-
-For $(N=5\times10^5)$ atoms in a harmonic trap, increasing $(\epsilon_{dd})$ produces a regime in which the trap volume becomes populated by droplets.
-
-At sufficiently large interaction strength, the droplet densities become increasingly homogeneous throughout the condensate. The simulations also reveal rotational-symmetry-breaking configurations when periodic-image interactions are not suppressed.
-
-## Computational Scale
-
-The simulations were performed on three-dimensional grids with physical dimensions of approximately
-
-$44\times44\times22,\mu\mathrm{m}^3$
-
-and particle numbers ranging from approximately
-
-$10^5 \quad\text{to}\quad 5\times10^5.$
-
-GPU acceleration was essential for performing the large parameter studies required to investigate convergence, phase transitions, and cutoff effects.
-
-## Repository Structure
+## Repository layout
 
 ```text
 .
-├── MyHeaders/
-│   ├── gradient_descent.hpp
-│   ├── gradient_descent.ipp
-│   ├── MyTools.hpp
-│   └── ...
-├── Own_program_vault/
-│   ├── main_gradient_descent.cpp
-│   ├── InputParser.py
-│   ├── parameters.prm
-│   └── analysis notebooks
+├── MyHeaders/                 # C++ headers for solver, traps, utilities, and parameters
+│   └── Omega_database/        # Trap-frequency calibration data
+├── Own_program_vault/         # C++ run configuration, Python helpers, Jupyter analysis
 ├── Results/
-│   └── selected simulation results
+│   ├── plots/                 # Selected figures
+│   └── simulations/           # Representative density outputs
 ├── thesis/
 │   └── Bachelorarbeit_Mark_Salzmann.pdf
-├── ultracold-dipolar/
-│   └── UltraCold simulation framework
+├── ultracold-dipolar/         # UltraCold framework snapshot / repository dependency
 └── README.md
 ```
 
-The repository contains both the C++/CUDA simulation code and Python/Jupyter tools used for post-processing, data collection, and visualization.
+## Getting started
 
+This is an **archived research-code repository**, not a packaged end-user application. The original calculations were run in a Linux HPC environment with NVIDIA GPUs. Reproducing a full study therefore requires an NVIDIA CUDA toolchain and a compatible build of UltraCold.
 
-## Dependencies
+### Prerequisites
 
-This project is built on top of [UltraCold](https://github.com/smroccuzzo/UltraCold),
-a modular C++ library for studying ultracold atomic systems within
-Gross-Pitaevskii theory. UltraCold provides CPU and CUDA-accelerated
-solvers and numerical infrastructure used by this project.
+- Linux
+- C++ compiler with C++17 support
+- NVIDIA GPU, CUDA Toolkit, and cuFFT
+- CMake
+- Python 3 with NumPy, SciPy, Matplotlib, and Jupyter (for analysis)
+- [UltraCold](https://github.com/smroccuzzo/UltraCold) and its documented dependencies
 
-- **UltraCold** — C++ Gross-Pitaevskii simulation library
-- **CUDA** — GPU acceleration
-- **cuFFT** — Fourier transforms
-- **CMake** — build system
-- **Python / NumPy / SciPy / Matplotlib** — data analysis and visualization
+### Reproduction workflow
 
-See the [UltraCold documentation](https://smroccuzzo.github.io/UltraCold/html/index.html)
-for installation instructions and API documentation.
+1. Obtain a CUDA-enabled UltraCold build following the [official UltraCold documentation](https://smroccuzzo.github.io/UltraCold/html/index.html).
+2. Add the project headers and compile the simulation entry point against that build. The original run configuration is in `Own_program_vault/main_gradient_descent.cpp`.
+3. Select a parameter set from `MyHeaders/` and configure the trap, atom number, $\varepsilon_{dd}$, grid, and cutoff mode.
+4. Run matched calculations with and without the cutoff.
+5. Analyse output density fields with the notebooks in `Own_program_vault/` and compare the converged states.
 
-The simulations were developed and tested in a Linux/HPC environment with NVIDIA GPUs.
+The tracked `ultracold-dipolar` entry is a framework dependency from the original research environment. If it is empty after cloning, use the upstream UltraCold project linked above and adapt the local build paths to your installation.
 
-## Reproducibility
+## Results and limitations
 
-The simulation code depends on the UltraCold framework contained in the `ultracold-dipolar` directory.
+The results show that FFT periodicity can change both quantitative and qualitative conclusions in long-range dipolar simulations. In particular, periodic replicas can shift estimated critical interaction strengths and induce density configurations incompatible with the rotational symmetry of the physical trap.
 
-A typical workflow consists of:
+This repository preserves the code and selected data used in the thesis. It has not been refactored into a general-purpose, versioned simulation package; paths and build integration may require adjustment for a new system. The thesis is the authoritative description of numerical settings, convergence checks, and interpretation of results.
 
-1. Building the UltraCold library and the custom simulation code with CMake.
-2. Configuring the physical and numerical parameters.
-3. Running the GPU-accelerated gradient-descent simulation.
-4. Processing the resulting density data with the included Python/Jupyter tools.
-5. Comparing converged ground states for different interaction strengths, trapping potentials, and cutoff configurations.
+## Thesis and citation
 
-Detailed numerical parameters and methodological choices are documented in the accompanying thesis.
+Read the complete thesis: [*Effects of long-range interaction cutoffs in trapped dipolar Bose–Einstein condensates* (PDF)](thesis/Bachelorarbeit_Mark_Salzmann.pdf)
 
-Because the simulations were designed primarily for GPU-based HPC execution, reproducing the full parameter studies requires access to a suitable NVIDIA GPU environment.
+If you use or discuss this work, please cite:
 
-## Scientific Context
+```bibtex
+@thesis{salzmann2025cutoffs,
+  author = {Mark Salzmann},
+  title = {Effects of long-range interaction cutoffs in trapped dipolar Bose--Einstein condensates},
+  school = {Heidelberg University},
+  year = {2025},
+  type = {Bachelor's thesis}
+}
+```
 
-The project investigates numerical effects that arise when long-range interactions are evaluated using Fourier methods in finite simulation domains.
+## Acknowledgements
 
-The central observation is that periodic boundary conditions, while computationally convenient, can introduce interactions between the physical condensate and its periodic replicas. For dipolar systems, these interactions can become sufficiently strong to alter observable properties of the numerically obtained ground state.
+This work builds on [UltraCold](https://github.com/smroccuzzo/UltraCold), developed by S. M. Roccuzzo and collaborators. The research was conducted at Heidelberg University with computing support from the EINC GPU cluster.
 
-The results therefore highlight the importance of carefully controlling finite-size and periodic-boundary effects when performing numerical simulations of long-range interacting quantum systems.
+## Contact
 
-## References
-
-**Bachelor thesis**
-
-M. Salzmann, *[Title of Bachelor's Thesis]*, Heidelberg University, 2025.
-
-See [`thesis/Bachelorarbeit_Mark_Salzmann.pdf`](thesis/Bachelorarbeit_Mark_Salzmann.pdf).
-
-**Relevant literature**
-
-S. M. Roccuzzo et al., study of supersolid phases in dipolar Bose-Einstein condensates.
-
-Additional references and the complete bibliography are provided in the accompanying thesis.
+For questions about the research or repository, please open a GitHub issue or contact [Mark Salzmann](https://github.com/SalzmannMark).
