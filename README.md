@@ -45,16 +45,7 @@ The model is the three-dimensional eGPE for a dipolar $^{164}\mathrm{Dy}$ conden
 
 The condensate is represented by a complex order parameter $\psi(\mathbf r,t)$, whose density is $n(\mathbf r,t)=|\psi(\mathbf r,t)|^2$. Its evolution is described by the eGPE
 
-$$
-i\hbar \frac{\partial \psi}{\partial t} =
-\left[
-  -\frac{\hbar^2}{2m}\nabla^2
-  + V_\mathrm{ext}
-  + g|\psi|^2
-  + \Phi_\mathrm{dd}
-  + \gamma_\mathrm{QF}|\psi|^3
-\right]\psi.
-$$
+$$i\hbar \frac{\partial \psi}{\partial t} = \left[-\frac{\hbar^2}{2m}\nabla^2+ V_\mathrm{ext} + g|\psi|^2 + \Phi_\mathrm{dd}+ \gamma_\mathrm{QF}|\psi|^3 \right]\psi.$$
 
 Here, $g=4\pi\hbar^2a_s/m$ is the contact-interaction coupling, $V_\mathrm{ext}$ describes the trap, and $\gamma_\mathrm{QF}|\psi|^3$ is the local Lee–Huang–Yang (LHY) correction. The LHY term captures the leading contribution from quantum fluctuations and provides a stabilising repulsion that is essential for finite-density droplet states.
 
